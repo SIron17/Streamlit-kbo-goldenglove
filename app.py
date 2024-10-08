@@ -99,6 +99,10 @@ if uploaded_hitter_file and uploaded_pitcher_file:
                     for i, (angle, value) in enumerate(zip(angles, player_stats)):
                         ax.text(angle, value + 0.1, f"{value:.2f}", horizontalalignment='center', size=5, color='blue', weight='bold')
 
+                        # 요소 옆에 수치 위치 조정
+                        offset = 0.1 if value < 0 else -0.1
+                        ax.text(angle, value + offset, f"{value:.2f}", horizontalalignment='center', size=5, color='black')
+
                     st.pyplot(fig)
 
             else:
@@ -121,6 +125,10 @@ if uploaded_hitter_file and uploaded_pitcher_file:
                 # 각 지표의 수치 표시
                 for i, (angle, value) in enumerate(zip(angles, player_stats)):
                     ax.text(angle, value + 0.1, f"{value:.2f}", horizontalalignment='center', size=5, color='blue', weight='bold')
+
+                    # 요소 옆에 수치 위치 조정
+                    offset = 0.1 if value < 0 else -0.1
+                    ax.text(angle, value + offset, f"{value:.2f}", horizontalalignment='center', size=5, color='black')
 
                 st.pyplot(fig)
 
