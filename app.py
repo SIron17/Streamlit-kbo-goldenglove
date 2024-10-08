@@ -93,7 +93,7 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         player_stats += player_stats[:1]
 
         # 그래프 크기와 폰트 조정
-        fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))  # 크기 축소
+        fig, ax = plt.subplots(figsize=(2, 2), subplot_kw=dict(polar=True))  # 크기 축소
         ax.fill(angles, player_stats, color='b', alpha=0.25)
         ax.plot(angles, player_stats, color='b', linewidth=2)
         ax.set_yticklabels([])
