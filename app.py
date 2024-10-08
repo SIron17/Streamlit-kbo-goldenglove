@@ -7,6 +7,10 @@ import os
 import matplotlib.pyplot as plt
 from math import pi
 
+# 한글 폰트 설정 (Windows 사용자용 - Malgun Gothic, 다른 OS에서는 폰트명을 변경)
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
+
 # Streamlit 페이지 설정
 st.set_page_config(page_title="KBO 골든글러브 예측모델", page_icon="⚾", layout="wide")
 st.title("KBO 골든글러브 수상자 예측모델")
@@ -51,6 +55,11 @@ if uploaded_hitter_file and uploaded_pitcher_file:
     # 각 포지션별 예측 수행 및 결과 저장
     final_candidates = pd.DataFrame()
 
+    # 방사형 그래프 그릴 준비 - 2행 5열의 그래프 레이아웃
+    fig, axs = plt.subplots(2, 5, figsize=(18, 10), subplot_kw=dict(polar=True))
+    fig.tight_layout(pad=4.0)
+    graph_count = 0
+
     for pos, model_path in model_paths.items():
         # 모델 파일 확인
         if not os.path.exists(model_path):
@@ -81,10 +90,7 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         pos_data['GoldenGlove_Prob'] = model.predict(pos_data_scaled).flatten()
 
         # 상위 후보자 추출
-        if pos == 'Outfielders':
-            top_candidates = pos_data.nlargest(5, 'GoldenGlove_Prob')
-        else:
-            top_candidates = pos_data.nlargest(3, 'GoldenGlove_Prob')
+        top_candidates = pos_data.nlargest(3, 'GoldenGlove_Prob')
 
         # 최종 후보자 통합
         final_candidates = pd.concat([final_candidates, top_candidates[['Name', 'Position', 'GoldenGlove_Prob']]], ignore_index=True)
@@ -103,14 +109,18 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         player_stats = top_player[labels].values.flatten().tolist()
         player_stats += player_stats[:1]
 
-        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+        # 현재 그래프 배치 위치 계산 (2행 5열 레이아웃)
+        row = graph_count // 5
+        col = graph_count % 5
+
+        ax = axs[row, col]
         ax.fill(angles, player_stats, color='b', alpha=0.25)
         ax.plot(angles, player_stats, color='b', linewidth=2)
         ax.set_yticklabels([])
         ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels, fontsize=12)
-        ax.set_title(f"{top_player['Name']}의 주요 성적 지표", size=15, color='blue', y=1.1)
-        st.pyplot(fig)
+        ax.set_xticklabels(labels, fontsize=10)
+        ax.set_title(f"{top_player['Name']} ({pos})", size=12, color='blue', y=1.1)
+        graph_count += 1
 
     # 최종 예측 결과 표시
     st.write("### 2024년 골든글러브 수상자 예측 결과")
