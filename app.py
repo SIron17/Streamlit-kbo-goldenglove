@@ -7,7 +7,7 @@ import os
 import matplotlib.pyplot as plt
 from math import pi
 
-# 한글 폰트 설정 제거
+# 폰트 설정 제거 (기본 폰트 사용)
 plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
 
 # Streamlit 페이지 설정
@@ -92,13 +92,14 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         player_stats = top_player[labels].values.flatten().tolist()
         player_stats += player_stats[:1]
 
-        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+        # 그래프 크기와 폰트 조정
+        fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))  # 크기 축소
         ax.fill(angles, player_stats, color='b', alpha=0.25)
         ax.plot(angles, player_stats, color='b', linewidth=2)
         ax.set_yticklabels([])
         ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels, fontsize=12)
-        ax.set_title(f"{top_player['Name']}의 주요 성적 지표", size=15, color='blue', y=1.1)
+        ax.set_xticklabels(labels, fontsize=9)  # 폰트 크기 축소
+        ax.set_title(f"{top_player['Name']}의 주요 성적 지표", size=12, color='blue', y=1.1)
         st.pyplot(fig)
 
     st.write("### 골든글러브 수상자 예측 결과")
