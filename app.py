@@ -7,8 +7,7 @@ import os
 import matplotlib.pyplot as plt
 from math import pi
 
-# 한글 폰트 설정 (Windows 사용자용 - Malgun Gothic, 다른 OS에서는 폰트명을 변경)
-plt.rcParams['font.family'] = 'Malgun Gothic'
+# 한글 폰트 설정 제거 (기본 폰트 사용)
 plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
 
 # Streamlit 페이지 설정
@@ -123,7 +122,7 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         graph_count += 1
 
     # 최종 예측 결과 표시
-    st.write("### 2024년 골든글러브 수상자 예측 결과")
+    st.write("### 골든글러브 수상자 예측 결과")
     st.dataframe(final_candidates)
 
     # 예측 결과를 CSV 파일로 다운로드할 수 있게 설정
