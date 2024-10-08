@@ -7,7 +7,7 @@ import os
 import matplotlib.pyplot as plt
 from math import pi
 
-# 한글 폰트 설정 제거 (기본 폰트 사용)
+# 한글 폰트 설정 제거
 plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
 
 # Streamlit 페이지 설정
@@ -54,78 +54,56 @@ if uploaded_hitter_file and uploaded_pitcher_file:
     # 각 포지션별 예측 수행 및 결과 저장
     final_candidates = pd.DataFrame()
 
-    # 방사형 그래프 그릴 준비 - 2행 5열의 그래프 레이아웃
-    fig, axs = plt.subplots(2, 5, figsize=(18, 10), subplot_kw=dict(polar=True))
-    fig.tight_layout(pad=4.0)
-    graph_count = 0
-
     for pos, model_path in model_paths.items():
-        # 모델 파일 확인
         if not os.path.exists(model_path):
             st.warning(f"{pos} 모델을 찾을 수 없습니다. 경로: {model_path}")
             continue
 
-        # 해당 포지션의 모델 로드
         model = tf.keras.models.load_model(model_path)
 
-        # 포지션별 데이터 선택
         if pos == 'P':
             pos_data = pitcher_data
         else:
             pos_data = hitter_data[hitter_data['Position'] == pos]
 
-        # 데이터가 비어있으면 경고 메시지 출력 후 다음 포지션으로
         if pos_data.empty:
             st.warning(f"CSV 파일에 '{pos}' 포지션 데이터가 없습니다. 해당 포지션을 건너뜁니다.")
             continue
 
-        # 해당 포지션의 주요 피처만 선택하여 스케일링
         features = position_features[pos]
         pos_data_filled = pos_data[features].fillna(0)
         scaler = StandardScaler()
         pos_data_scaled = scaler.fit_transform(pos_data_filled)
 
-        # 예측 수행
         pos_data['GoldenGlove_Prob'] = model.predict(pos_data_scaled).flatten()
 
-        # 상위 후보자 추출
         top_candidates = pos_data.nlargest(3, 'GoldenGlove_Prob')
 
-        # 최종 후보자 통합
         final_candidates = pd.concat([final_candidates, top_candidates[['Name', 'Position', 'GoldenGlove_Prob']]], ignore_index=True)
 
-        # 1위 선수의 능력치 방사형 그래프로 시각화
         top_player = top_candidates.iloc[0]
         st.write(f"### {pos} 포지션의 1위 선수: {top_player['Name']} ({top_player['Position']})")
 
-        # 방사형 그래프 설정
         labels = list(features)
         num_vars = len(labels)
         angles = [n / float(num_vars) * 2 * pi for n in range(num_vars)]
-        angles += angles[:1]  # 마지막 값과 첫 번째 값 연결
+        angles += angles[:1]
 
-        # 선수 데이터 추출 및 원형으로 연결
         player_stats = top_player[labels].values.flatten().tolist()
         player_stats += player_stats[:1]
 
-        # 현재 그래프 배치 위치 계산 (2행 5열 레이아웃)
-        row = graph_count // 5
-        col = graph_count % 5
-
-        ax = axs[row, col]
+        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
         ax.fill(angles, player_stats, color='b', alpha=0.25)
         ax.plot(angles, player_stats, color='b', linewidth=2)
         ax.set_yticklabels([])
         ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels, fontsize=10)
-        ax.set_title(f"{top_player['Name']} ({pos})", size=12, color='blue', y=1.1)
-        graph_count += 1
+        ax.set_xticklabels(labels, fontsize=12)
+        ax.set_title(f"{top_player['Name']}의 주요 성적 지표", size=15, color='blue', y=1.1)
+        st.pyplot(fig)
 
-    # 최종 예측 결과 표시
     st.write("### 골든글러브 수상자 예측 결과")
     st.dataframe(final_candidates)
 
-    # 예측 결과를 CSV 파일로 다운로드할 수 있게 설정
     st.download_button("결과 다운로드", final_candidates.to_csv(index=False).encode('utf-8-sig'), "golden_glove_top_candidates_2024.csv", "text/csv")
 
 else:
