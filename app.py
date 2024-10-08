@@ -4,12 +4,14 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+from math import pi
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="KBO 골든글러브 예측모델", page_icon="⚾", layout="wide")
 st.title("KBO 골든글러브 수상자 예측모델")
 
-# 1. 각 포지션별로 저장된 모델 경로 설정
+# 각 포지션별 저장된 모델 경로 설정
 model_paths = {
     'P': './models/P_golden_glove_model_1984_2023.keras',
     'C': './models/C_golden_glove_model_1984_2023.keras',
@@ -21,7 +23,7 @@ model_paths = {
     'DH': './models/DH_golden_glove_model_1984_2023.keras'
 }
 
-# 2. 각 포지션별 주요 피처 설정
+# 각 포지션별 주요 피처 설정
 position_features = {
     'P': ['WAR', 'W', 'L', 'S', 'HD', 'IP', 'ER', 'R', 'rRA', 'H', 'HR', 'BB', 'HP', 'SO', 'ERA', 'RA9', 'rRA9', 'rRA9pf', 'FIP', 'WHIP'],
     'C': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+'],
@@ -33,7 +35,7 @@ position_features = {
     'DH': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+']
 }
 
-# 3. CSV 파일 업로드 받기
+# CSV 파일 업로드 받기
 uploaded_hitter_file = st.sidebar.file_uploader("타자 성적 CSV 파일 업로드", type=["csv"])
 uploaded_pitcher_file = st.sidebar.file_uploader("투수 성적 CSV 파일 업로드", type=["csv"])
 
@@ -46,7 +48,7 @@ if uploaded_hitter_file and uploaded_pitcher_file:
     # 외야수 포지션 통합
     hitter_data['Position'] = hitter_data['Position'].replace({'LF': 'Outfielders', 'CF': 'Outfielders', 'RF': 'Outfielders'})
 
-    # 4. 각 포지션별 예측 수행 및 결과 저장
+    # 각 포지션별 예측 수행 및 결과 저장
     final_candidates = pd.DataFrame()
 
     for pos, model_path in model_paths.items():
@@ -87,11 +89,34 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         # 최종 후보자 통합
         final_candidates = pd.concat([final_candidates, top_candidates[['Name', 'Position', 'GoldenGlove_Prob']]], ignore_index=True)
 
-    # 5. 최종 예측 결과 표시
-    st.write("### 골든글러브 수상자 예측 결과")
+        # 1위 선수의 능력치 방사형 그래프로 시각화
+        top_player = top_candidates.iloc[0]
+        st.write(f"### {pos} 포지션의 1위 선수: {top_player['Name']} ({top_player['Position']})")
+
+        # 방사형 그래프 설정
+        labels = list(features)
+        num_vars = len(labels)
+        angles = [n / float(num_vars) * 2 * pi for n in range(num_vars)]
+        angles += angles[:1]  # 마지막 값과 첫 번째 값 연결
+
+        # 선수 데이터 추출 및 원형으로 연결
+        player_stats = top_player[labels].values.flatten().tolist()
+        player_stats += player_stats[:1]
+
+        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+        ax.fill(angles, player_stats, color='b', alpha=0.25)
+        ax.plot(angles, player_stats, color='b', linewidth=2)
+        ax.set_yticklabels([])
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels, fontsize=12)
+        ax.set_title(f"{top_player['Name']}의 주요 성적 지표", size=15, color='blue', y=1.1)
+        st.pyplot(fig)
+
+    # 최종 예측 결과 표시
+    st.write("### 2024년 골든글러브 수상자 예측 결과")
     st.dataframe(final_candidates)
 
-    # 6. 예측 결과를 CSV 파일로 다운로드할 수 있게 설정
+    # 예측 결과를 CSV 파일로 다운로드할 수 있게 설정
     st.download_button("결과 다운로드", final_candidates.to_csv(index=False).encode('utf-8-sig'), "golden_glove_top_candidates_2024.csv", "text/csv")
 
 else:
