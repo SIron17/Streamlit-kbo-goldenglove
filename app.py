@@ -1,104 +1,98 @@
 import streamlit as st
 import pandas as pd
 import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.preprocessing import StandardScaler
+import numpy as np
+import os
 
-# 포지션별 모델 파일 경로
-model_paths = {
-    "P": './models/P_golden_glove_model_1984_2023.keras',
-    "C": './models/C_golden_glove_model_1984_2023.keras',
-    "1B": './models/1B_golden_glove_model_1984_2023.keras',
-    "2B": './models/2B_golden_glove_model_1984_2023.keras',
-    "3B": './models/3B_golden_glove_model_1984_2023.keras',
-    "SS": './models/SS_golden_glove_model_1984_2023.keras',
-    "Outfielders": './models/Outfielders_golden_glove_model_1984_2023.keras',
-    "DH": './models/DH_golden_glove_model_1984_2023.keras'
-}
-
-# 모델 로드 함수
-def load_position_model(position):
-    if position in model_paths:
-        return tf.keras.models.load_model(model_paths[position])
-    return None
-
-# 타자와 투수의 특징 정의
-hitter_features = [
-    'WAR', 'oWAR', 'dWAR', 'G', 'PA', 'ePA', 'AB', 'R', 'H', '2B', '3B', 'HR', 'TB',
-    'RBI', 'SB', 'CS', 'BB', 'HP', 'IB', 'SO', 'GDP', 'SH', 'SF', 'AVG', 'OBP', 'SLG',
-    'OPS', 'R/ePA', 'wRC+'
-]
-
-pitcher_features = [
-    'WAR', 'G', 'GS', 'GR', 'GF', 'CG', 'SHO', 'W', 'L', 'S', 'HD', 'IP', 'ER', 'R', 'rRA', 
-    'TBF', 'H', '2B', '3B', 'HR', 'BB', 'HP', 'IB', 'SO', 'ROE', 'BK', 'WP', 'ERA', 'RA9', 
-    'rRA9', 'rRA9pf', 'FIP', 'WHIP'
-]
-
-# 페이지 레이아웃 설정
-st.set_page_config(page_title="KBO 골든글러브 수상자 예측모델", page_icon="⚾", layout="wide")
+# Streamlit 페이지 설정
+st.set_page_config(page_title="KBO 골든글러브 예측모델", page_icon="⚾", layout="wide")
 st.title("KBO 골든글러브 수상자 예측모델")
 
-# 사이드바에 파일 업로드 설정
-uploaded_file = st.sidebar.file_uploader("선수 성적 CSV 파일을 업로드하세요", type="csv")
+# 1. 각 포지션별로 저장된 모델 경로 설정
+model_paths = {
+    'P': './models/P_golden_glove_model_1984_2023.keras',
+    'C': './models/C_golden_glove_model_1984_2023.keras',
+    '1B': './models/1B_golden_glove_model_1984_2023.keras',
+    '2B': './models/2B_golden_glove_model_1984_2023.keras',
+    '3B': './models/3B_golden_glove_model_1984_2023.keras',
+    'SS': './models/SS_golden_glove_model_1984_2023.keras',
+    'Outfielders': './models/Outfielders_golden_glove_model_1984_2023.keras',
+    'DH': './models/DH_golden_glove_model_1984_2023.keras'
+}
 
-if uploaded_file:
-    # 업로드된 CSV 데이터 불러오기
-    data = pd.read_csv(uploaded_file)
-    st.sidebar.write("업로드된 데이터:")
-    st.sidebar.write(data)
+# 2. 각 포지션별 주요 피처 설정
+position_features = {
+    'P': ['WAR', 'W', 'L', 'S', 'HD', 'IP', 'ER', 'R', 'rRA', 'H', 'HR', 'BB', 'HP', 'SO', 'ERA', 'RA9', 'rRA9', 'rRA9pf', 'FIP', 'WHIP'],
+    'C': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+'],
+    '1B': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+'],
+    '2B': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+'],
+    '3B': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+'],
+    'SS': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+'],
+    'Outfielders': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+'],
+    'DH': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+']
+}
 
-    # 포지션 선택
-    position = st.sidebar.selectbox("포지션을 선택하세요", list(model_paths.keys()))
-    st.write(f"### 선택된 포지션: {position}")
+# 3. CSV 파일 업로드 받기
+uploaded_hitter_file = st.sidebar.file_uploader("타자 성적 CSV 파일 업로드", type=["csv"])
+uploaded_pitcher_file = st.sidebar.file_uploader("투수 성적 CSV 파일 업로드", type=["csv"])
 
-    # CSV 파일에 선택한 포지션이 포함되어 있는지 확인
-    if position not in data['Position'].unique():
-        st.warning(f"선택한 포지션 '{position}'이(가) 업로드된 CSV 파일에 존재하지 않습니다. 다른 포지션을 선택해주세요.")
-    else:
-        # 모델 로드 및 데이터 전처리
-        model = load_position_model(position)
-        if model:
-            # 포지션에 따라 다른 특징 리스트 사용
-            if position == 'P':
-                features = pitcher_features  # 투수 특징 사용
-            else:
-                features = hitter_features   # 타자 특징 사용
+# 데이터가 업로드되었는지 확인
+if uploaded_hitter_file and uploaded_pitcher_file:
+    # CSV 데이터 읽기
+    hitter_data = pd.read_csv(uploaded_hitter_file)
+    pitcher_data = pd.read_csv(uploaded_pitcher_file)
 
-            # 예측에 사용할 특징만 선택
-            input_data = data[data['Position'] == position][features].fillna(0)  # 해당 포지션의 데이터만 사용
-            st.write(f"### 사용할 특징: {features}")
+    # 외야수 포지션 통합
+    hitter_data['Position'] = hitter_data['Position'].replace({'LF': 'Outfielders', 'CF': 'Outfielders', 'RF': 'Outfielders'})
 
-            # 데이터가 올바른 형식인지 확인
-            st.write("### 예측에 사용될 데이터")
-            st.write(input_data.head())
+    # 4. 각 포지션별 예측 수행 및 결과 저장
+    final_candidates = pd.DataFrame()
 
-            # 스케일링 수행
-            scaler = StandardScaler()
-            input_data_scaled = scaler.fit_transform(input_data)
+    for pos, model_path in model_paths.items():
+        # 모델 파일 확인
+        if not os.path.exists(model_path):
+            st.warning(f"{pos} 모델을 찾을 수 없습니다. 경로: {model_path}")
+            continue
 
-            # 예측 수행
-            predictions = model.predict(input_data_scaled)
-            data['수상 확률'] = 0  # 기본 값 설정
-            data.loc[data['Position'] == position, '수상 확률'] = predictions
-            data['순위'] = data['수상 확률'].rank(ascending=False)
-            data = data.sort_values(by='수상 확률', ascending=False)
+        # 해당 포지션의 모델 로드
+        model = tf.keras.models.load_model(model_path)
 
-            # 예측 결과 테이블 표시
-            st.write(f"### {position} 포지션의 예측 결과")
-            st.write(data[['Name', 'Team', 'Position', '수상 확률', '순위']])
-
-            # 1위 선수의 능력치 시각화
-            top_player = data[data['Position'] == position].iloc[0]
-            st.write(f"### {position} 포지션의 1위 선수: {top_player['Name']} ({top_player['Team']})")
-            top_stats = top_player[features]
-            fig, ax = plt.subplots()
-            sns.barplot(x=top_stats.index, y=top_stats.values, ax=ax)
-            ax.set_title(f"{top_player['Name']}의 주요 성적 지표")
-            st.pyplot(fig)
+        # 포지션별 데이터 선택
+        if pos == 'P':
+            pos_data = pitcher_data
         else:
-            st.write("선택한 포지션의 모델이 로드되지 않았습니다.")
+            pos_data = hitter_data[hitter_data['Position'] == pos]
+
+        # 데이터가 비어있으면 경고 메시지 출력 후 다음 포지션으로
+        if pos_data.empty:
+            st.warning(f"CSV 파일에 '{pos}' 포지션 데이터가 없습니다. 해당 포지션을 건너뜁니다.")
+            continue
+
+        # 해당 포지션의 주요 피처만 선택하여 스케일링
+        features = position_features[pos]
+        pos_data_filled = pos_data[features].fillna(0)
+        scaler = StandardScaler()
+        pos_data_scaled = scaler.fit_transform(pos_data_filled)
+
+        # 예측 수행
+        pos_data['GoldenGlove_Prob'] = model.predict(pos_data_scaled).flatten()
+
+        # 상위 후보자 추출
+        if pos == 'Outfielders':
+            top_candidates = pos_data.nlargest(5, 'GoldenGlove_Prob')
+        else:
+            top_candidates = pos_data.nlargest(3, 'GoldenGlove_Prob')
+
+        # 최종 후보자 통합
+        final_candidates = pd.concat([final_candidates, top_candidates[['Name', 'Position', 'GoldenGlove_Prob']]], ignore_index=True)
+
+    # 5. 최종 예측 결과 표시
+    st.write("### 골든글러브 수상자 예측 결과")
+    st.dataframe(final_candidates)
+
+    # 6. 예측 결과를 CSV 파일로 다운로드할 수 있게 설정
+    st.download_button("결과 다운로드", final_candidates.to_csv(index=False).encode('utf-8-sig'), "golden_glove_top_candidates_2024.csv", "text/csv")
+
 else:
-    st.write("선수 성적 CSV 파일을 업로드해주세요.")
+    st.write("타자와 투수의 성적 CSV 파일을 모두 업로드해주세요.")
