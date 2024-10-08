@@ -102,7 +102,9 @@ if uploaded_hitter_file and uploaded_pitcher_file:
             # Outfielders의 경우 1위, 2위, 3위 그래프 표시
             if pos == 'Outfielders':
                 titles = ["1st Performance Metrics", "2nd Performance Metrics", "3rd Performance Metrics"]
-                for idx, player in top_candidates.head(3).iterrows():
+                num_top_players = min(3, len(top_candidates))  # 존재하는 선수만 시각화
+                for idx in range(num_top_players):
+                    player = top_candidates.iloc[idx]
                     draw_radar_chart(player, features, titles[idx], chart_size=(2, 2))  # 작은 크기의 차트 생성
             else:
                 # 나머지 포지션은 1위 그래프만 출력
