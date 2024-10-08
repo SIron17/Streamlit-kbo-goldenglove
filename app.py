@@ -8,29 +8,6 @@ import os
 import matplotlib.pyplot as plt
 from math import pi
 
-def draw_radar_chart(player, features, title, chart_size=(2, 2)):
-    """선수의 성적 지표를 방사형 그래프로 시각화하는 함수"""
-    labels = list(features)
-    angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
-    angles += angles[:1]
-
-    player_stats = player[labels].values.flatten().tolist()
-    player_stats += player_stats[:1]
-
-    fig, ax = plt.subplots(figsize=chart_size, subplot_kw=dict(polar=True))
-    ax.fill(angles, player_stats, color='b', alpha=0.25)
-    ax.plot(angles, player_stats, color='b', linewidth=2)
-    ax.set_yticklabels([])
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=8)
-    ax.set_title(title, size=10, y=1.1)
-
-    # 각 지표의 수치 표시
-    for i, (angle, value) in enumerate(zip(angles, player_stats)):
-        ax.text(angle, value + 0.1, f"{value:.2f}", horizontalalignment='center', size=6, color='blue', weight='bold')
-    
-    st.pyplot(fig)
-
 # Streamlit 페이지 설정
 st.set_page_config(page_title="KBO 골든글러브 예측모델", page_icon="⚾", layout="wide")
 st.title("KBO 골든글러브 수상자 예측모델")
@@ -103,13 +80,52 @@ if uploaded_hitter_file and uploaded_pitcher_file:
             if pos == 'Outfielders':
                 titles = ["1st Performance Metrics", "2nd Performance Metrics", "3rd Performance Metrics"]
                 for idx, player in top_candidates.head(3).iterrows():
-                    draw_radar_chart(player, features, titles[idx], chart_size=(2, 2))  # 작은 크기의 차트 생성
+                    labels = list(features)
+                    angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
+                    angles += angles[:1]
+
+                    player_stats = player[labels].values.flatten().tolist()
+                    player_stats += player_stats[:1]
+
+                    fig, ax = plt.subplots(figsize=(1.5, 1.5), subplot_kw=dict(polar=True))  # 크기 줄이기
+                    ax.fill(angles, player_stats, color='b', alpha=0.25)
+                    ax.plot(angles, player_stats, color='b', linewidth=2)
+                    ax.set_yticklabels([])
+                    ax.set_xticks(angles[:-1])
+                    ax.set_xticklabels(labels, fontsize=6)
+                    ax.set_title(titles[idx], size=8, y=1.5)  # y값 증가로 간격 조정
+
+                    # 각 지표의 수치 표시
+                    for i, (angle, value) in enumerate(zip(angles, player_stats)):
+                        ax.text(angle, value + 0.1, f"{value:.2f}", horizontalalignment='center', size=5, color='blue', weight='bold')
+
+                    st.pyplot(fig)
+
             else:
                 # 나머지 포지션은 1위 그래프만 출력
-                draw_radar_chart(top_candidates.iloc[0], features, "1st Performance Metrics", chart_size=(2, 2))
+                labels = list(features)
+                angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
+                angles += angles[:1]
+
+                player_stats = top_candidates.iloc[0][labels].values.flatten().tolist()
+                player_stats += player_stats[:1]
+
+                fig, ax = plt.subplots(figsize=(1.5, 1.5), subplot_kw=dict(polar=True))  # 크기 줄이기
+                ax.fill(angles, player_stats, color='b', alpha=0.25)
+                ax.plot(angles, player_stats, color='b', linewidth=2)
+                ax.set_yticklabels([])
+                ax.set_xticks(angles[:-1])
+                ax.set_xticklabels(labels, fontsize=6)
+                ax.set_title("1st Performance Metrics", size=8, y=1.5)  # y값 증가로 간격 조정
+
+                # 각 지표의 수치 표시
+                for i, (angle, value) in enumerate(zip(angles, player_stats)):
+                    ax.text(angle, value + 0.1, f"{value:.2f}", horizontalalignment='center', size=5, color='blue', weight='bold')
+
+                st.pyplot(fig)
 
     # 전체 예측 결과 표시 및 중앙 정렬
-    st.write("### 골든글러브 수상자 예측 결과", align="center")
+    st.write("### 골든글러브 수상자 예측 결과")
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     st.dataframe(final_candidates, width=800)
     st.markdown("</div>", unsafe_allow_html=True)
