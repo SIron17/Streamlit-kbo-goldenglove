@@ -1,19 +1,36 @@
+# -*- coding:utf-8 -*-
 import streamlit as st
+import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
-import tensorflow as tf
-from sklearn.preprocessing import StandardScaler
 import numpy as np
 import os
-import matplotlib.pyplot as plt
+import tensorflow as tf
 from math import pi
+import matplotlib.font_manager as fm
 
-# 한글 폰트 설정
-plt.rcParams['font.family'] = 'Malgun Gothic'  # Malgun Gothic 폰트 설정 (Windows용)
-plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
+# 한글폰트 적용 함수 설정
+@st.cache_data
+def font_registered():
+    """커스텀 폰트를 등록하고 반환하는 함수"""
+    font_dirs = [os.getcwd() + '/customFonts']
+    font_files = fm.findSystemFonts(fontpaths=font_dirs)
+
+    # 폰트 파일을 matplotlib에 등록
+    for font_file in font_files:
+        fm.fontManager.addfont(font_file)
+    
+    fm._load_fontmanager(try_read_cache=False)
+    return [f.name for f in fm.fontManager.ttflist]
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="KBO 골든글러브 예측모델", page_icon="⚾", layout="wide")
 st.title("KBO 골든글러브 수상자 예측모델")
+
+# 한글 폰트 적용
+available_fonts = font_registered()
+fontname = st.sidebar.selectbox("폰트 선택", available_fonts)
+plt.rc('font', family=fontname)  # 선택된 폰트로 matplotlib 설정
 
 # 각 포지션별 저장된 모델 경로 설정
 model_paths = {
@@ -43,7 +60,6 @@ position_features = {
 uploaded_hitter_file = st.sidebar.file_uploader("타자 성적 CSV 파일 업로드", type=["csv"])
 uploaded_pitcher_file = st.sidebar.file_uploader("투수 성적 CSV 파일 업로드", type=["csv"])
 
-# 데이터가 업로드되었는지 확인
 if uploaded_hitter_file and uploaded_pitcher_file:
     # CSV 데이터 읽기
     hitter_data = pd.read_csv(uploaded_hitter_file)
@@ -55,9 +71,10 @@ if uploaded_hitter_file and uploaded_pitcher_file:
     # 각 포지션별 예측 수행 및 결과 저장
     final_candidates = pd.DataFrame()
 
+    # 한글 폰트를 적용하여 각 포지션별 방사형 그래프 생성
     for pos, model_path in model_paths.items():
         if not os.path.exists(model_path):
-            st.warning(f"{pos} 모델을 찾을 수 없습니다. 경로: {model_path}")
+            st.warning(f"{pos} 모델을 찾을 수 없습니다.")
             continue
 
         model = tf.keras.models.load_model(model_path)
@@ -68,7 +85,7 @@ if uploaded_hitter_file and uploaded_pitcher_file:
             pos_data = hitter_data[hitter_data['Position'] == pos]
 
         if pos_data.empty:
-            st.warning(f"CSV 파일에 '{pos}' 포지션 데이터가 없습니다. 해당 포지션을 건너뜁니다.")
+            st.warning(f"CSV 파일에 '{pos}' 포지션 데이터가 없습니다.")
             continue
 
         features = position_features[pos]
@@ -78,29 +95,22 @@ if uploaded_hitter_file and uploaded_pitcher_file:
 
         pos_data['GoldenGlove_Prob'] = model.predict(pos_data_scaled).flatten()
 
+        # 방사형 그래프 그리기
         top_candidates = pos_data.nlargest(3, 'GoldenGlove_Prob')
-
-        final_candidates = pd.concat([final_candidates, top_candidates[['Name', 'Position', 'GoldenGlove_Prob']]], ignore_index=True)
-
         top_player = top_candidates.iloc[0]
-        st.write(f"### {pos} 포지션의 1위 선수: {top_player['Name']} ({top_player['Position']})")
-
         labels = list(features)
-        num_vars = len(labels)
-        angles = [n / float(num_vars) * 2 * pi for n in range(num_vars)]
+        angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
         angles += angles[:1]
 
         player_stats = top_player[labels].values.flatten().tolist()
         player_stats += player_stats[:1]
 
-        # 그래프 크기와 폰트 조정
-        fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))  # 크기 축소
-        ax.fill(angles, player_stats, color='b', alpha=0.25)
-        ax.plot(angles, player_stats, color='b', linewidth=2)
-        ax.set_yticklabels([])
+        fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
+        ax.fill(angles, player_stats, color='blue', alpha=0.25)
+        ax.plot(angles, player_stats, color='blue', linewidth=2)
         ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(labels, fontsize=8)  # 폰트 크기 축소
-        ax.set_title(f"{top_player['Name']}의 주요 성적 지표", size=10, color='blue', y=1.1)
+        ax.set_xticklabels(labels, fontsize=9)
+        ax.set_title(f"{top_player['Name']}의 주요 성적 지표", size=12, y=1.1)
         st.pyplot(fig)
 
     st.write("### 골든글러브 수상자 예측 결과")
