@@ -36,29 +36,28 @@ position_features = {
     'DH': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+']
 }
 
-def plot_performance_metrics(player_stats, labels, title):
+def draw_radar_chart(player, features, title, chart_size=(2, 2)):
     """선수의 성적 지표를 방사형 그래프로 시각화하는 함수"""
+    labels = list(features)
     angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
     angles += angles[:1]
-    
-    player_stats = player_stats.flatten().tolist()
+
+    player_stats = player[labels].values.flatten().tolist()
     player_stats += player_stats[:1]
 
-    fig, ax = plt.subplots(figsize=(1.5, 1.5), subplot_kw=dict(polar=True))
+    fig, ax = plt.subplots(figsize=chart_size, subplot_kw=dict(polar=True))
     ax.fill(angles, player_stats, color='b', alpha=0.25)
     ax.plot(angles, player_stats, color='b', linewidth=2)
     ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=6)
-    ax.set_title(title, size=8, y=1.6)
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_title(title, size=10, y=1.1)
 
     # 각 지표의 수치 표시
     for i, (angle, value) in enumerate(zip(angles, player_stats)):
-        ax.text(angle, value + 0.1, f"{value:.2f}", horizontalalignment='center', size=5, color='blue', weight='bold')
-        offset = 0.1 if value < 0 else -0.1
-        ax.text(angle, value + offset, f"{value:.2f}", horizontalalignment='center', size=5, color='black')
-
-    return fig
+        ax.text(angle, value + 0.1, f"{value:.2f}", horizontalalignment='center', size=6, color='blue', weight='bold')
+    
+    st.pyplot(fig)
 
 # CSV 파일 업로드 받기
 uploaded_hitter_file = st.sidebar.file_uploader("타자 성적 CSV 파일 업로드", type=["csv"])
@@ -104,17 +103,10 @@ if uploaded_hitter_file and uploaded_pitcher_file:
             if pos == 'Outfielders':
                 titles = ["1st Performance Metrics", "2nd Performance Metrics", "3rd Performance Metrics"]
                 for idx, player in top_candidates.head(3).iterrows():
-                    labels = list(features)
-                    player_stats = player[labels].values
-                    fig = plot_performance_metrics(player_stats, labels, titles[idx])
-                    st.pyplot(fig)
-
+                    draw_radar_chart(player, features, titles[idx], chart_size=(2, 2))  # 작은 크기의 차트 생성
             else:
                 # 나머지 포지션은 1위 그래프만 출력
-                labels = list(features)
-                player_stats = top_candidates.iloc[0][labels].values
-                fig = plot_performance_metrics(player_stats, labels, "1st Performance Metrics")
-                st.pyplot(fig)
+                draw_radar_chart(top_candidates.iloc[0], features, "1st Performance Metrics", chart_size=(2, 2))
 
     # 전체 예측 결과 표시 및 중앙 정렬
     st.write("### 골든글러브 수상자 예측 결과")
