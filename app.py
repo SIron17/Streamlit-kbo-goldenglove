@@ -59,7 +59,7 @@ if uploaded_hitter_file and uploaded_pitcher_file:
 
         pos_data = pitcher_data if pos == 'P' else hitter_data[hitter_data['Position'] == pos]
         if pos_data.empty:
-            st.warning(f"CSV 파일에 '{pos}' 포지션 데이터가 없습니다.")
+            st.warning(f"CSV 파일에 '{pos}' 포지션 데이터가 없습니다. 해당 포지션을 건너뜁니다.")
             continue
 
         features = position_features[pos]
@@ -71,27 +71,37 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         top_candidates = pos_data.nlargest(3 if pos != 'Outfielders' else 5, 'GoldenGlove_Prob')
         final_candidates = pd.concat([final_candidates, top_candidates[['Name', 'Position', 'GoldenGlove_Prob']]], ignore_index=True)
 
+        # 선택한 포지션의 선수 기록과 그래프만 표시
         if pos == position_selection:
-            st.write(f"### {pos} 포지션의 1위 선수: {top_candidates.iloc[0]['Name']} ({top_candidates.iloc[0]['Position']})")
+            st.write(f"### {pos} 포지션의 주요 선수 기록")
             st.write(top_candidates)
 
-            # 방사형 그래프 그리기
-            top_player = top_candidates.iloc[0]
-            labels = list(features)
-            angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
-            angles += angles[:1]
+            # Outfielders의 경우 3명 모두 방사형 그래프로 출력
+            for idx, player in top_candidates.iterrows():
+                labels = list(features)
+                angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
+                angles += angles[:1]
 
-            player_stats = top_player[labels].values.flatten().tolist()
-            player_stats += player_stats[:1]
+                player_stats = player[labels].values.flatten().tolist()
+                player_stats += player_stats[:1]
 
-            fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
-            ax.fill(angles, player_stats, color='b', alpha=0.25)
-            ax.plot(angles, player_stats, color='b', linewidth=2)
-            ax.set_yticklabels([])
-            ax.set_xticks(angles[:-1])
-            ax.set_xticklabels(labels, fontsize=8)
-            ax.set_title(f"{top_player['Name']}'s Performance Metrics", size=10, y=1.1)
-            st.pyplot(fig)
+                fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
+                ax.fill(angles, player_stats, color='b', alpha=0.25)
+                ax.plot(angles, player_stats, color='b', linewidth=2)
+                ax.set_yticklabels([])
+                ax.set_xticks(angles[:-1])
+                ax.set_xticklabels(labels, fontsize=8)
+
+                # 그래프 제목 설정
+                if idx == top_candidates.index[0]:
+                    title = "1st Performance Metrics"
+                elif idx == top_candidates.index[1]:
+                    title = "2nd Performance Metrics"
+                else:
+                    title = "3rd Performance Metrics"
+
+                ax.set_title(title, size=10, y=1.1)
+                st.pyplot(fig)
 
     # 전체 예측 결과 표시 및 중앙 정렬
     st.write("### 골든글러브 수상자 예측 결과", align="center")
