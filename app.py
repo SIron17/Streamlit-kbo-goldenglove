@@ -40,7 +40,7 @@ position_features = {
 hitter_radar_features = ['AVG', 'OBP', 'SLG', 'OPS', 'R/ePA']
 pitcher_radar_features = ['ERA', 'RA9', 'rRA9', 'rRA9pf', 'FIP', 'WHIP']
 
-def draw_comparison_radar_chart(player1, player2, features, title, player1_name, player2_name, chart_size=(2, 2)):
+def draw_comparison_radar_chart(player1, player2, features, title, chart_size=(2, 2)):
     """두 선수의 성적 지표를 비교하는 방사형 그래프"""
     labels = list(features)
     angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
@@ -54,24 +54,26 @@ def draw_comparison_radar_chart(player1, player2, features, title, player1_name,
 
     fig, ax = plt.subplots(figsize=chart_size, subplot_kw=dict(polar=True))
     
-    # Player 1 - Blue
+    # Player 1 - Blue with thicker lines
     ax.fill(angles, player1_stats, color='b', alpha=0.25)
-    ax.plot(angles, player1_stats, color='b', linewidth=2, label=player1_name)
+    ax.plot(angles, player1_stats, color='b', linewidth=3, label='Top Player')
+    ax.scatter(angles, player1_stats, color='b', s=50, edgecolor='black', zorder=5)
 
-    # Player 2 - Red
-    ax.fill(angles, player2_stats, color='r', alpha=0.25)
-    ax.plot(angles, player2_stats, color='r', linewidth=2, label=player2_name)
+    # Player 2 - Red with thicker lines
+    ax.fill(angles, player2_stats, color='r', alpha=0.15)
+    ax.plot(angles, player2_stats, color='r', linewidth=3, label='Selected Player')
+    ax.scatter(angles, player2_stats, color='r', s=50, edgecolor='black', zorder=5)
 
     ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=8)
     ax.set_title(title, size=12, y=1.1)
     
-    # 각 선수의 이름 표시
+    # 각 선수의 이름 표시 (Top Player, Selected Player)
     ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
 
     st.pyplot(fig)
-
+    
 # CSV 파일 업로드 받기
 uploaded_hitter_file = st.sidebar.file_uploader("타자 성적 CSV 파일 업로드", type=["csv"])
 uploaded_pitcher_file = st.sidebar.file_uploader("투수 성적 CSV 파일 업로드", type=["csv"])
