@@ -41,7 +41,7 @@ hitter_radar_features = ['AVG', 'OBP', 'SLG', 'OPS', 'R/ePA']
 pitcher_radar_features = ['ERA', 'RA9', 'rRA9', 'rRA9pf', 'FIP', 'WHIP']
 
 def draw_comparison_radar_chart(player1, player2, features, title):
-    """두 선수의 성적 지표를 비교하는 방사형 그래프 (크기: 150px x 150px)"""
+    """두 선수의 성적 지표를 비교하는 방사형 그래프 (크기: 300px x 300px)"""
     labels = list(features)
     angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
     angles += angles[:1]
@@ -52,26 +52,27 @@ def draw_comparison_radar_chart(player1, player2, features, title):
     player2_stats = player2[labels].values.flatten().tolist()
     player2_stats += player2_stats[:1]
 
-    fig, ax = plt.subplots(figsize=(1.5, 1.5), subplot_kw=dict(polar=True))  # 150px x 150px 크기로 설정
+    fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))  # 300px x 300px 크기로 설정
     
     # Player 1 - Blue with thicker lines
     ax.fill(angles, player1_stats, color='b', alpha=0.25)
     ax.plot(angles, player1_stats, color='b', linewidth=2, label='Top Player')
-    ax.scatter(angles, player1_stats, color='b', s=50, edgecolor='black', zorder=5)
+    ax.scatter(angles, player1_stats, color='b', s=30, edgecolor='black', zorder=5)
 
     # Player 2 - Red with thicker lines
     ax.fill(angles, player2_stats, color='r', alpha=0.15)
     ax.plot(angles, player2_stats, color='r', linewidth=2, label='Selected Player')
-    ax.scatter(angles, player2_stats, color='r', s=50, edgecolor='black', zorder=5)
+    ax.scatter(angles, player2_stats, color='r', s=30, edgecolor='black', zorder=5)
 
     ax.set_yticklabels([])
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, fontsize=8)
-    ax.set_title(title, size=12, y=1.1)
-    
-    # 각 선수의 이름 표시 (Top Player, Selected Player)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+    ax.set_title(title, size=14, y=1.1)
 
+    # 각 선수의 이름 표시 (Top Player, Selected Player) - 레전드 위치 변경
+    ax.legend(loc='upper left', bbox_to_anchor=(0.9, 1.2))  # 그래프를 가리지 않도록 위치 조정
+
+    plt.tight_layout()  # 레이아웃 조정
     st.pyplot(fig)
 
 # CSV 파일 업로드 받기
