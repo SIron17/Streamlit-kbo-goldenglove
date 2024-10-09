@@ -41,7 +41,7 @@ hitter_radar_features = ['AVG', 'OBP', 'SLG', 'OPS', 'R/ePA']
 pitcher_radar_features = ['ERA', 'RA9', 'rRA9', 'rRA9pf', 'FIP', 'WHIP']
 
 def draw_comparison_radar_chart(player1, player2, features, title):
-    """두 선수의 성적 지표를 비교하는 방사형 그래프 (크기: 300px x 300px)"""
+    """두 선수의 성적 지표를 비교하는 방사형 그래프 (테두리만 표시)"""
     labels = list(features)
     angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
     angles += angles[:1]
@@ -54,14 +54,12 @@ def draw_comparison_radar_chart(player1, player2, features, title):
 
     fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))  # 300px x 300px 크기로 설정
     
-    # Player 1 - Blue with thicker lines
-    ax.fill(angles, player1_stats, color='b', alpha=0.25)
-    ax.plot(angles, player1_stats, color='b', linewidth=2, label='Top Player')
+    # Player 1 - Blue line only
+    ax.plot(angles, player1_stats, color='b', linewidth=2, linestyle='-', label='Top Player')
     ax.scatter(angles, player1_stats, color='b', s=30, edgecolor='black', zorder=5)
 
-    # Player 2 - Red with thicker lines
-    ax.fill(angles, player2_stats, color='r', alpha=0.15)
-    ax.plot(angles, player2_stats, color='r', linewidth=2, label='Selected Player')
+    # Player 2 - Red line only
+    ax.plot(angles, player2_stats, color='r', linewidth=2, linestyle='-', label='Selected Player')
     ax.scatter(angles, player2_stats, color='r', s=30, edgecolor='black', zorder=5)
 
     ax.set_yticklabels([])
