@@ -40,8 +40,8 @@ position_features = {
 hitter_radar_features = ['AVG', 'OBP', 'SLG', 'OPS', 'R/ePA']
 pitcher_radar_features = ['ERA', 'RA9', 'rRA9', 'rRA9pf', 'FIP', 'WHIP']
 
-def draw_comparison_radar_chart(player1, player2, features, title, chart_size=(2, 2)):
-    """두 선수의 성적 지표를 비교하는 방사형 그래프"""
+def draw_comparison_radar_chart(player1, player2, features, title):
+    """두 선수의 성적 지표를 비교하는 방사형 그래프 (크기: 150px x 150px)"""
     labels = list(features)
     angles = [n / float(len(labels)) * 2 * pi for n in range(len(labels))]
     angles += angles[:1]
@@ -52,16 +52,16 @@ def draw_comparison_radar_chart(player1, player2, features, title, chart_size=(2
     player2_stats = player2[labels].values.flatten().tolist()
     player2_stats += player2_stats[:1]
 
-    fig, ax = plt.subplots(figsize=chart_size, subplot_kw=dict(polar=True))
+    fig, ax = plt.subplots(figsize=(1.5, 1.5), subplot_kw=dict(polar=True))  # 150px x 150px 크기로 설정
     
     # Player 1 - Blue with thicker lines
     ax.fill(angles, player1_stats, color='b', alpha=0.25)
-    ax.plot(angles, player1_stats, color='b', linewidth=3, label='Top Player')
+    ax.plot(angles, player1_stats, color='b', linewidth=2, label='Top Player')
     ax.scatter(angles, player1_stats, color='b', s=50, edgecolor='black', zorder=5)
 
     # Player 2 - Red with thicker lines
     ax.fill(angles, player2_stats, color='r', alpha=0.15)
-    ax.plot(angles, player2_stats, color='r', linewidth=3, label='Selected Player')
+    ax.plot(angles, player2_stats, color='r', linewidth=2, label='Selected Player')
     ax.scatter(angles, player2_stats, color='r', s=50, edgecolor='black', zorder=5)
 
     ax.set_yticklabels([])
@@ -73,7 +73,7 @@ def draw_comparison_radar_chart(player1, player2, features, title, chart_size=(2
     ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
 
     st.pyplot(fig)
-    
+
 # CSV 파일 업로드 받기
 uploaded_hitter_file = st.sidebar.file_uploader("타자 성적 CSV 파일 업로드", type=["csv"])
 uploaded_pitcher_file = st.sidebar.file_uploader("투수 성적 CSV 파일 업로드", type=["csv"])
@@ -118,12 +118,13 @@ if uploaded_hitter_file and uploaded_pitcher_file:
             st.write(top_candidates)
 
             # 상위 1위 선수와 선택한 선수 비교 그래프
-            top_player = top_candidates.iloc[0]
-            compare_player_name = st.selectbox(f"비교할 {pos} 선수 선택", top_candidates['Name'].tolist())
-            compare_player = top_candidates[top_candidates['Name'] == compare_player_name].iloc[0]
+            if len(top_candidates) > 0:  # 데이터가 있는지 확인
+                top_player = top_candidates.iloc[0]
+                compare_player_name = st.selectbox(f"비교할 {pos} 선수 선택", top_candidates['Name'].tolist())
+                compare_player = top_candidates[top_candidates['Name'] == compare_player_name].iloc[0]
 
-            # 방사형 그래프 비교
-            draw_comparison_radar_chart(top_player, compare_player, radar_features, "Comparison of Top Player vs Selected Player", top_player['Name'], compare_player['Name'])
+                # 방사형 그래프 비교 그리기
+                draw_comparison_radar_chart(top_player, compare_player, radar_features, "Comparison of Top Player vs Selected Player")
 
     # 전체 예측 결과 표시
     st.write("### 골든글러브 수상자 예측 결과")
