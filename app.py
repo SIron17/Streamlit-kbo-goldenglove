@@ -98,6 +98,9 @@ if uploaded_hitter_file and uploaded_pitcher_file:
         top_candidates = pos_data.nlargest(3 if pos != 'Outfielders' else 5, 'GoldenGlove_Prob')
         final_candidates = pd.concat([final_candidates, top_candidates[['Name', 'Position', 'GoldenGlove_Prob']]], ignore_index=True)
 
+        # 방사형 그래프에 사용할 지표 설정
+        radar_features = hitter_radar_features if pos != 'P' else pitcher_radar_features
+
         # 선택한 포지션의 선수 기록과 그래프만 표시
         if pos == position_selection:
             st.write(f"### {pos} 포지션의 주요 선수 기록")
@@ -109,13 +112,10 @@ if uploaded_hitter_file and uploaded_pitcher_file:
                 num_top_players = min(3, len(top_candidates))  # 존재하는 선수만 시각화
                 for idx in range(num_top_players):
                     player = top_candidates.iloc[idx]
-                    draw_radar_chart(player, hitter_radar_features, titles[idx], chart_size=(2, 2))  # 타자용 지표
-            elif pos == 'P':
-                # 투수는 투수용 지표만 시각화
-                draw_radar_chart(top_candidates.iloc[0], pitcher_radar_features, "1st Performance Metrics", chart_size=(2, 2))
+                    draw_radar_chart(player, radar_features, titles[idx], chart_size=(2, 2))
             else:
-                # 나머지 포지션은 타자용 지표로 1위 그래프만 출력
-                draw_radar_chart(top_candidates.iloc[0], hitter_radar_features, "1st Performance Metrics", chart_size=(2, 2))
+                # 나머지 포지션은 1위 그래프만 출력
+                draw_radar_chart(top_candidates.iloc[0], radar_features, "1st Performance Metrics", chart_size=(2, 2))
 
     # 전체 예측 결과 표시 및 중앙 정렬
     st.write("### 골든글러브 수상자 예측 결과")
