@@ -36,6 +36,10 @@ position_features = {
     'DH': ['WAR', 'oWAR', 'dWAR', 'R', 'H', '2B', '3B', 'HR', 'TB', 'RBI', 'SB', 'BB', 'SO', 'AVG', 'OBP', 'SLG', 'OPS', 'R/ePA', 'wRC+']
 }
 
+# 타자와 투수의 방사형 그래프에 사용할 주요 지표 설정
+hitter_radar_features = ['AVG', 'OBP', 'SLG', 'OPS', 'R/ePA']
+pitcher_radar_features = ['ERA', 'RA9', 'rRA9', 'rRA9pf', 'FIP', 'WHIP']
+
 def draw_radar_chart(player, features, title, chart_size=(2, 2)):
     """선수의 성적 지표를 방사형 그래프로 시각화하는 함수"""
     labels = list(features)
@@ -105,10 +109,13 @@ if uploaded_hitter_file and uploaded_pitcher_file:
                 num_top_players = min(3, len(top_candidates))  # 존재하는 선수만 시각화
                 for idx in range(num_top_players):
                     player = top_candidates.iloc[idx]
-                    draw_radar_chart(player, features, titles[idx], chart_size=(2, 2))  # 작은 크기의 차트 생성
+                    draw_radar_chart(player, hitter_radar_features, titles[idx], chart_size=(2, 2))  # 타자용 지표
+            elif pos == 'P':
+                # 투수는 투수용 지표만 시각화
+                draw_radar_chart(top_candidates.iloc[0], pitcher_radar_features, "1st Performance Metrics", chart_size=(2, 2))
             else:
-                # 나머지 포지션은 1위 그래프만 출력
-                draw_radar_chart(top_candidates.iloc[0], features, "1st Performance Metrics", chart_size=(2, 2))
+                # 나머지 포지션은 타자용 지표로 1위 그래프만 출력
+                draw_radar_chart(top_candidates.iloc[0], hitter_radar_features, "1st Performance Metrics", chart_size=(2, 2))
 
     # 전체 예측 결과 표시 및 중앙 정렬
     st.write("### 골든글러브 수상자 예측 결과")
